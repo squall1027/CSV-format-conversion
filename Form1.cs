@@ -140,6 +140,7 @@ namespace csv_format_conversion
                                     continue;
                                 }
 
+                                // 寫入 CSV 文件
                                 for (int j = 0; j < dataGridView1.ColumnCount; j++)
                                 {
                                     // 檢查單元格是否為空
@@ -200,7 +201,15 @@ namespace csv_format_conversion
                     string[] values = line.Split('\t');
                     for (int i = 0; i < values.Length; i++)
                     {
-                        row[i] = values[i];
+                        if (i < dataTable.Columns.Count)
+                        {
+                            row[i] = values[i];
+                        }
+                        else
+                        {
+                            dataTable.Columns.Add("Column " + i);
+                            row[i] = values[i];
+                        }
                     }
                     dataTable.Rows.Add(row);
                 }
@@ -215,6 +224,7 @@ namespace csv_format_conversion
                 MessageBox.Show("沒有可以貼上的數據");
             }
         }
+
 
         // 定義一個棧，用於記錄操作歷史
         Stack<DataGridViewCell> cellStack = new Stack<DataGridViewCell>();
