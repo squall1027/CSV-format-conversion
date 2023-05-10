@@ -37,12 +37,14 @@
             this.statusBar = new System.Windows.Forms.StatusBar();
             this.Pastebutton = new System.Windows.Forms.Button();
             this.UndoButton = new System.Windows.Forms.Button();
+            this.Version_label = new System.Windows.Forms.Label();
+            this.Filelist_label = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.SuspendLayout();
             // 
             // btnReadCSV
             // 
-            this.btnReadCSV.Location = new System.Drawing.Point(41, 309);
+            this.btnReadCSV.Location = new System.Drawing.Point(41, 318);
             this.btnReadCSV.Name = "btnReadCSV";
             this.btnReadCSV.Size = new System.Drawing.Size(75, 23);
             this.btnReadCSV.TabIndex = 0;
@@ -52,11 +54,11 @@
             // 
             // btnSaveUTF8
             // 
-            this.btnSaveUTF8.Location = new System.Drawing.Point(150, 309);
+            this.btnSaveUTF8.Location = new System.Drawing.Point(150, 318);
             this.btnSaveUTF8.Name = "btnSaveUTF8";
             this.btnSaveUTF8.Size = new System.Drawing.Size(104, 23);
             this.btnSaveUTF8.TabIndex = 1;
-            this.btnSaveUTF8.Text = "Save UTF8 CSV";
+            this.btnSaveUTF8.Text = "Save CSV (BIG5)";
             this.btnSaveUTF8.UseVisualStyleBackColor = true;
             this.btnSaveUTF8.Click += new System.EventHandler(this.btnSaveUTF8_Click);
             // 
@@ -68,16 +70,17 @@
             // 
             this.dataGridView1.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.AllCells;
             this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataGridView1.Location = new System.Drawing.Point(9, 13);
+            this.dataGridView1.Location = new System.Drawing.Point(9, 19);
             this.dataGridView1.Name = "dataGridView1";
             this.dataGridView1.RowTemplate.Height = 24;
-            this.dataGridView1.Size = new System.Drawing.Size(544, 283);
+            this.dataGridView1.Size = new System.Drawing.Size(544, 290);
             this.dataGridView1.TabIndex = 2;
+            this.dataGridView1.TabStop = false;
             this.dataGridView1.CellValueChanged += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellValueChanged);
             // 
             // statusBar
             // 
-            this.statusBar.Location = new System.Drawing.Point(0, 345);
+            this.statusBar.Location = new System.Drawing.Point(0, 370);
             this.statusBar.Name = "statusBar";
             this.statusBar.Size = new System.Drawing.Size(565, 25);
             this.statusBar.SizingGrip = false;
@@ -86,7 +89,7 @@
             // 
             // Pastebutton
             // 
-            this.Pastebutton.Location = new System.Drawing.Point(333, 309);
+            this.Pastebutton.Location = new System.Drawing.Point(333, 318);
             this.Pastebutton.Name = "Pastebutton";
             this.Pastebutton.Size = new System.Drawing.Size(75, 23);
             this.Pastebutton.TabIndex = 57;
@@ -96,7 +99,7 @@
             // 
             // UndoButton
             // 
-            this.UndoButton.Location = new System.Drawing.Point(442, 309);
+            this.UndoButton.Location = new System.Drawing.Point(442, 318);
             this.UndoButton.Name = "UndoButton";
             this.UndoButton.Size = new System.Drawing.Size(75, 23);
             this.UndoButton.TabIndex = 58;
@@ -104,12 +107,33 @@
             this.UndoButton.UseVisualStyleBackColor = true;
             this.UndoButton.Click += new System.EventHandler(this.UndoButton_Click);
             // 
+            // Version_label
+            // 
+            this.Version_label.AutoSize = true;
+            this.Version_label.Location = new System.Drawing.Point(507, 3);
+            this.Version_label.Name = "Version_label";
+            this.Version_label.Size = new System.Drawing.Size(46, 12);
+            this.Version_label.TabIndex = 59;
+            this.Version_label.Text = "Ver : 1.3";
+            // 
+            // Filelist_label
+            // 
+            this.Filelist_label.AutoSize = true;
+            this.Filelist_label.Location = new System.Drawing.Point(1, 354);
+            this.Filelist_label.Name = "Filelist_label";
+            this.Filelist_label.Size = new System.Drawing.Size(62, 12);
+            this.Filelist_label.TabIndex = 60;
+            this.Filelist_label.Text = "文件位置 : ";
+            this.Filelist_label.Visible = false;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.ClientSize = new System.Drawing.Size(565, 370);
+            this.ClientSize = new System.Drawing.Size(565, 395);
+            this.Controls.Add(this.Filelist_label);
+            this.Controls.Add(this.Version_label);
             this.Controls.Add(this.UndoButton);
             this.Controls.Add(this.Pastebutton);
             this.Controls.Add(this.statusBar);
@@ -123,6 +147,7 @@
             this.Text = "CSV Format Conversion - By:Seifer";
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -136,6 +161,8 @@
         private System.Windows.Forms.StatusBar statusBar;
         private System.Windows.Forms.Button Pastebutton;
         private System.Windows.Forms.Button UndoButton;
+        private System.Windows.Forms.Label Version_label;
+        private System.Windows.Forms.Label Filelist_label;
     }
 }
 

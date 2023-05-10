@@ -35,6 +35,16 @@ namespace csv_format_conversion
                     // 檢測 CSV 文件的編碼格式
                     Encoding encoding = GetEncoding(filePath);
 
+                    // 如果文件編碼為 UTF-8 但沒有 BOM，則在文件開頭添加 BOM
+                    if (encoding.Equals(Encoding.UTF8) && !HasBOM(filePath))
+                    {
+                        string fileContent = File.ReadAllText(filePath, Encoding.UTF8);
+                        File.WriteAllText(filePath, "\uFEFF" + fileContent, Encoding.UTF8);
+                    }
+
+                    // 重新獲取編碼格式
+                    encoding = GetEncoding(filePath);
+
                     // 讀取 CSV 文件
                     using (StreamReader reader = new StreamReader(filePath, encoding))
                     {
@@ -64,30 +74,48 @@ namespace csv_format_conversion
                         }
                         dataGridView1.DataSource = dataTable;
 
-                        // 顯示編碼格式
+                        // 文件位置
+                        Filelist_label.Visible = true;
+                        Filelist_label.Text = "文件位置 : " + filePath;
+
                         statusBar.Text = "目前文件編碼格式為 : " + encoding.EncodingName;
 
+                        // 顯示編碼格式
                         MessageBox.Show("文件已讀取，編碼格式為：" + encoding.EncodingName);
                     }
                 }
                 catch (Exception ex)
                 {
-                    statusBar.Text = "讀取CSV文件時出現異常 : " + ex.Message;
+                    statusBar.Text = "讀取 CSV 文件時出現異常 : " + ex.Message;
 
-                    MessageBox.Show("讀取CSV文件時出現異常：" + ex.Message);
+                    MessageBox.Show("讀取 CSV 文件時出現異常：" + ex.Message);
                 }
             }
         }
 
-        private Encoding GetEncoding(string filePath)
+        // 判斷文件是否有 BOM
+        private bool HasBOM(string filePath)
+        {
+            byte[] bom = new byte[4];
+            using (FileStream fileStream = new FileStream(filePath, FileMode.Open))
+            {
+                fileStream.Read(bom, 0, 4);
+            }
+
+            return (bom[0] == 0xef && bom[1] == 0xbb && bom[2] == 0xbf);
+        }
+
+
+        private Encoding GetEncoding(string filename)
         {
             // 檢測文件的編碼格式
             byte[] bytes = new byte[4];
-            using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            using (FileStream fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
             {
                 fs.Read(bytes, 0, 4);
             }
 
+            // 檢測 BOM
             if (bytes[0] == 0xef && bytes[1] == 0xbb && bytes[2] == 0xbf)
             {
                 return Encoding.UTF8;
@@ -100,9 +128,21 @@ namespace csv_format_conversion
             {
                 return Encoding.BigEndianUnicode;
             }
-            else
+            else // 沒有BOM的UTF-8
             {
-                return Encoding.Default;
+                // 如果文件沒有BOM，則基於內容嘗試檢測其編碼。
+                using (var reader = new StreamReader(filename, true))
+                {
+                    var fileContent = reader.ReadToEnd();
+
+                    var utf8Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+                    if (utf8Encoding.GetString(utf8Encoding.GetBytes(fileContent)) == fileContent)
+                    {
+                        return utf8Encoding;
+                    }
+
+                    return Encoding.Default;
+                }
             }
         }
 
@@ -119,7 +159,7 @@ namespace csv_format_conversion
                     try
                     {
                         // 將數據寫入CSV文件
-                        using (StreamWriter writer = new StreamWriter(filePath, false, Encoding.UTF8))
+                        using (StreamWriter writer = new StreamWriter(filePath, false, Encoding.GetEncoding(950)))
                         {
                             // 寫入列名
                             for (int i = 0; i < dataGridView1.ColumnCount; i++)
@@ -161,6 +201,8 @@ namespace csv_format_conversion
                             }
 
                         }
+
+                        statusBar.Text = "目前文件編碼格式為 : 繁體中文 (Big5)";
 
                         MessageBox.Show("文件已保存");
                     }
