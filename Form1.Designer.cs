@@ -73,7 +73,7 @@
             this.dataGridView1.Location = new System.Drawing.Point(9, 19);
             this.dataGridView1.Name = "dataGridView1";
             this.dataGridView1.RowTemplate.Height = 24;
-            this.dataGridView1.Size = new System.Drawing.Size(544, 290);
+            this.dataGridView1.Size = new System.Drawing.Size(1039, 290);
             this.dataGridView1.TabIndex = 2;
             this.dataGridView1.TabStop = false;
             this.dataGridView1.CellValueChanged += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellValueChanged);
@@ -82,7 +82,7 @@
             // 
             this.statusBar.Location = new System.Drawing.Point(0, 370);
             this.statusBar.Name = "statusBar";
-            this.statusBar.Size = new System.Drawing.Size(565, 25);
+            this.statusBar.Size = new System.Drawing.Size(1060, 25);
             this.statusBar.SizingGrip = false;
             this.statusBar.TabIndex = 56;
             this.statusBar.Text = "Welcome!";
@@ -103,18 +103,18 @@
             this.UndoButton.Name = "UndoButton";
             this.UndoButton.Size = new System.Drawing.Size(75, 23);
             this.UndoButton.TabIndex = 58;
-            this.UndoButton.Text = "撤銷上一步";
+            this.UndoButton.Text = "撤銷貼上";
             this.UndoButton.UseVisualStyleBackColor = true;
             this.UndoButton.Click += new System.EventHandler(this.UndoButton_Click);
             // 
             // Version_label
             // 
             this.Version_label.AutoSize = true;
-            this.Version_label.Location = new System.Drawing.Point(507, 3);
+            this.Version_label.Location = new System.Drawing.Point(1002, 4);
             this.Version_label.Name = "Version_label";
             this.Version_label.Size = new System.Drawing.Size(46, 12);
             this.Version_label.TabIndex = 59;
-            this.Version_label.Text = "Ver : 1.3";
+            this.Version_label.Text = "Ver : 1.4";
             // 
             // Filelist_label
             // 
@@ -131,7 +131,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.ClientSize = new System.Drawing.Size(565, 395);
+            this.ClientSize = new System.Drawing.Size(1060, 395);
             this.Controls.Add(this.Filelist_label);
             this.Controls.Add(this.Version_label);
             this.Controls.Add(this.UndoButton);

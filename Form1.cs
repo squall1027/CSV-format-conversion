@@ -6,6 +6,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -53,7 +54,7 @@ namespace csv_format_conversion
                         while (!reader.EndOfStream)
                         {
                             string line = reader.ReadLine();
-                            string[] values = line.Split(',');
+                            string[] values = Regex.Split(line, ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
                             if (isFirstRow)
                             {
                                 foreach (string value in values)
@@ -73,6 +74,9 @@ namespace csv_format_conversion
                             }
                         }
                         dataGridView1.DataSource = dataTable;
+
+                        // 設定 DataGridView 的字體
+                        SetDataGridViewFont(encoding);
 
                         // 文件位置
                         Filelist_label.Visible = true;
@@ -146,6 +150,23 @@ namespace csv_format_conversion
             }
         }
 
+        // 在讀取完 CSV 文件後，設定 DataGridView 的字體
+        private void SetDataGridViewFont(Encoding encoding)
+        {
+            switch (encoding.EncodingName.ToUpper())
+            {
+                case "UTF-8":
+                    dataGridView1.Font = new Font("Microsoft JhengHei UI", 9);
+                    break;
+                case "BIGENDIANUNICODE":
+                case "UNICODE":
+                    dataGridView1.Font = new Font("Microsoft JhengHei UI", 10);
+                    break;
+                default:
+                    dataGridView1.Font = new Font("Microsoft JhengHei UI", 12);
+                    break;
+            }
+        }
 
         private void btnSaveUTF8_Click(object sender, EventArgs e)
         {
