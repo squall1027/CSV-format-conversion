@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -36,16 +38,6 @@ namespace csv_format_conversion
                     // 檢測 CSV 文件的編碼格式
                     Encoding encoding = GetEncoding(filePath);
 
-                    // 如果文件編碼為 UTF-8 但沒有 BOM，則在文件開頭添加 BOM
-                    if (encoding.Equals(Encoding.UTF8) && !HasBOM(filePath))
-                    {
-                        string fileContent = File.ReadAllText(filePath, Encoding.UTF8);
-                        File.WriteAllText(filePath, "\uFEFF" + fileContent, Encoding.UTF8);
-                    }
-
-                    // 重新獲取編碼格式
-                    encoding = GetEncoding(filePath);
-
                     // 讀取 CSV 文件
                     using (StreamReader reader = new StreamReader(filePath, encoding))
                     {
@@ -75,79 +67,114 @@ namespace csv_format_conversion
                         }
                         dataGridView1.DataSource = dataTable;
 
-                        // 設定 DataGridView 的字體
-                        SetDataGridViewFont(encoding);
+                        // 獲取表格中的行數
+                        CountRows();
 
-                        // 文件位置
+                        // DeBUG用，如要用請新増 richTextBox1 組件
+                        // richTextBox1.Text = File.ReadAllText(filePath, encoding);
+
+                        // 設定 DataGridView 的字體
+                        //SetDataGridViewFont(encoding);
+
+                        // 瀏覽 CSV 的文件位置
+                        btnBrowseCSV.Visible = true;
+
+                        // 當前 CSV 文件路徑
                         Filelist_label.Visible = true;
                         Filelist_label.Text = "文件位置 : " + filePath;
 
                         statusBar.Text = "目前文件編碼格式為 : " + encoding.EncodingName;
 
                         // 顯示編碼格式
-                        MessageBox.Show("文件已讀取，編碼格式為：" + encoding.EncodingName);
+                        MessageBox.Show("文件已讀取成功！\r\n\r\n當前 CSV 編碼格式為：" + encoding.EncodingName, "提示 :");
                     }
                 }
                 catch (Exception ex)
                 {
                     statusBar.Text = "讀取 CSV 文件時出現異常 : " + ex.Message;
 
-                    MessageBox.Show("讀取 CSV 文件時出現異常：" + ex.Message);
+                    MessageBox.Show("讀取 CSV 文件時出現異常：\r\n\r\n" + ex.Message, "提示 :");
                 }
             }
         }
-
-        // 判斷文件是否有 BOM
-        private bool HasBOM(string filePath)
-        {
-            byte[] bom = new byte[4];
-            using (FileStream fileStream = new FileStream(filePath, FileMode.Open))
-            {
-                fileStream.Read(bom, 0, 4);
-            }
-
-            return (bom[0] == 0xef && bom[1] == 0xbb && bom[2] == 0xbf);
-        }
-
 
         private Encoding GetEncoding(string filename)
         {
-            // 檢測文件的編碼格式
-            byte[] bytes = new byte[4];
+            // 預設為 BIG5
+            Encoding encoding = Encoding.GetEncoding("big5");
+
+            // 讀取文件前三個字節判斷編碼格式
             using (FileStream fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
             {
-                fs.Read(bytes, 0, 4);
-            }
+                // 讀取文件前三個字節判斷編碼格式
+                byte[] bom = new byte[3];
+                fs.Read(bom, 0, 3);
 
-            // 檢測 BOM
-            if (bytes[0] == 0xef && bytes[1] == 0xbb && bytes[2] == 0xbf)
-            {
-                return Encoding.UTF8;
-            }
-            else if (bytes[0] == 0xfe && bytes[1] == 0xff)
-            {
-                return Encoding.Unicode;
-            }
-            else if (bytes[0] == 0xff && bytes[1] == 0xfe)
-            {
-                return Encoding.BigEndianUnicode;
-            }
-            else // 沒有BOM的UTF-8
-            {
-                // 如果文件沒有BOM，則基於內容嘗試檢測其編碼。
-                using (var reader = new StreamReader(filename, true))
+                // 檢測 BOM UTF8
+                if (bom[0] == 0xef && bom[1] == 0xbb && bom[2] == 0xbf)
                 {
-                    var fileContent = reader.ReadToEnd();
+                    encoding = new UTF8Encoding(true);
+                }
+                else
+                {
+                    // 不是 BOM UTF8，重新讀取文件開頭判斷編碼格式
+                    fs.Seek(0, SeekOrigin.Begin);
 
-                    var utf8Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
-                    if (utf8Encoding.GetString(utf8Encoding.GetBytes(fileContent)) == fileContent)
+                    byte[] buffer = new byte[1000];
+                    int bytesRead = fs.Read(buffer, 0, buffer.Length);
+
+                    // 判斷 UTF-8 編碼
+                    if (bytesRead >= 3 && buffer[0] == 0xef && buffer[1] == 0xbb && buffer[2] == 0xbf)
                     {
-                        return utf8Encoding;
+                        encoding = new UTF8Encoding(false);
                     }
-
-                    return Encoding.Default;
+                    else
+                    {
+                        bool isUtf8 = true;
+                        for (int i = 0; i < bytesRead; i++)
+                        {
+                            byte b = buffer[i];
+                            if (b <= 0x7f)
+                            {
+                                // ASCII 字符
+                                continue;
+                            }
+                            else if (b >= 0xc2 && b <= 0xdf)
+                            {
+                                // 2 字節 UTF-8
+                                if (i + 1 >= bytesRead || (buffer[i + 1] & 0xc0) != 0x80)
+                                {
+                                    isUtf8 = false;
+                                    break;
+                                }
+                                i++;
+                            }
+                            else if (b >= 0xe0 && b <= 0xef)
+                            {
+                                // 3 字節 UTF-8
+                                if (i + 2 >= bytesRead || (buffer[i + 1] & 0xc0) != 0x80 || (buffer[i + 2] & 0xc0) != 0x80)
+                                {
+                                    isUtf8 = false;
+                                    break;
+                                }
+                                i += 2;
+                            }
+                            else
+                            {
+                                // 不是 UTF-8
+                                isUtf8 = false;
+                                break;
+                            }
+                        }
+                        if (isUtf8)
+                        {
+                            encoding = new UTF8Encoding(false);
+                        }
+                    }
                 }
             }
+
+            return encoding;
         }
 
         // 在讀取完 CSV 文件後，設定 DataGridView 的字體
@@ -166,6 +193,19 @@ namespace csv_format_conversion
                     dataGridView1.Font = new Font("Microsoft JhengHei UI", 12);
                     break;
             }
+        }
+
+        // 獲取表格中的行數
+        private void CountRows()
+        {
+            int rowCount = dataGridView1.RowCount - 1;
+
+            Rowlist_label.Visible = true;
+            SelectedRowCountLabel.Visible = true;
+
+            SelectedRowCountLabel.Text = "選中筆數 : 1";
+
+            Rowlist_label.Text = "總列筆數 : " + rowCount;
         }
 
         private void btnSaveUTF8_Click(object sender, EventArgs e)
@@ -239,48 +279,73 @@ namespace csv_format_conversion
             }
         }
 
+        private void btnBrowseCSV_Click(object sender, EventArgs e)
+        {
+            // 檢查是否已讀取 CSV 文件
+            if (string.IsNullOrEmpty(Filelist_label.Text))
+            {
+                MessageBox.Show("請先讀取 CSV 文件！", "提示 :");
+                return;
+            }
+
+            // 取得 CSV 文件所在的文件夾位置
+            string folderPath = Path.GetDirectoryName(Filelist_label.Text.Replace("文件位置 : ", ""));
+
+            // 打開文件夾
+            Process.Start(folderPath);
+        }
+
         private void Pastebutton_Click(object sender, EventArgs e)
         {
             if (dataGridView1.DataSource != null)
             {
-                // 保存當前數據狀態
-                previousData = ((DataTable)dataGridView1.DataSource).Copy();
 
-                // 讀取剪貼板中的數據
-                string clipboardText = Clipboard.GetText();
-                string[] lines = clipboardText.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-
-                // 創建DataTable對象
-                DataTable dataTable = new DataTable();
-                for (int i = 0; i < dataGridView1.Columns.Count; i++)
+                // 顯示提示框，詢問用戶是否確認清空數據
+                DialogResult dialogResult = MessageBox.Show("貼上數據會清空當前數據，確認空數據嗎？", "確認清空數據", MessageBoxButtons.YesNo);
+                if (dialogResult == DialogResult.Yes)
                 {
-                    dataTable.Columns.Add(dataGridView1.Columns[i].HeaderText);
-                }
+                    // 用戶選擇了確認貼上數據，執行數據貼上的操作
 
-                // 添加數據
-                foreach (string line in lines)
-                {
-                    DataRow row = dataTable.NewRow();
-                    string[] values = line.Split('\t');
-                    for (int i = 0; i < values.Length; i++)
+                    // 先保存當前數據狀態，用來記錄回退數據用。
+                    previousData = ((DataTable)dataGridView1.DataSource).Copy();
+
+                    // 讀取剪貼板中的數據
+                    string clipboardText = Clipboard.GetText();
+                    string[] lines = clipboardText.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+
+                    // 創建DataTable對象
+                    DataTable dataTable = new DataTable();
+                    for (int i = 0; i < dataGridView1.Columns.Count; i++)
                     {
-                        if (i < dataTable.Columns.Count)
-                        {
-                            row[i] = values[i];
-                        }
-                        else
-                        {
-                            dataTable.Columns.Add("Column " + i);
-                            row[i] = values[i];
-                        }
+                        dataTable.Columns.Add(dataGridView1.Columns[i].HeaderText);
                     }
-                    dataTable.Rows.Add(row);
+
+                    // 添加數據
+                    foreach (string line in lines)
+                    {
+                        DataRow row = dataTable.NewRow();
+                        string[] values = line.Split('\t');
+                        for (int i = 0; i < values.Length; i++)
+                        {
+                            if (i < dataTable.Columns.Count)
+                            {
+                                row[i] = values[i];
+                            }
+                            else
+                            {
+                                dataTable.Columns.Add("Column " + i);
+                                row[i] = values[i];
+                            }
+                        }
+                        dataTable.Rows.Add(row);
+                    }
+
+                    // 將DataTable賦值給dataGridView1的DataSource
+                    dataGridView1.DataSource = dataTable;
+
+                    MessageBox.Show("數據貼上成功");
                 }
 
-                // 將DataTable賦值給dataGridView1的DataSource
-                dataGridView1.DataSource = dataTable;
-
-                MessageBox.Show("數據貼上成功");
             }
             else
             {
@@ -313,5 +378,57 @@ namespace csv_format_conversion
                 MessageBox.Show("沒有可以撤銷的數據");
             }
         }
+
+        private void btnConvertToUTF8_Click(object sender, EventArgs e)
+        {
+            if (dataGridView1.DataSource != null)
+            {
+                DataTable dataTable = (DataTable)dataGridView1.DataSource;
+                StringBuilder sb = new StringBuilder();
+
+                // 生成 CSV 文件的表頭
+                foreach (DataColumn column in dataTable.Columns)
+                {
+                    sb.Append(column.ColumnName + ",");
+                }
+                sb.Remove(sb.Length - 1, 1);
+                sb.Append(Environment.NewLine);
+
+                // 生成 CSV 文件的數據行
+                foreach (DataRow row in dataTable.Rows)
+                {
+                    foreach (DataColumn column in dataTable.Columns)
+                    {
+                        sb.Append(row[column].ToString() + ",");
+                    }
+                    sb.Remove(sb.Length - 1, 1);
+                    sb.Append(Environment.NewLine);
+                }
+
+                // 將數據寫入 UTF-8 格式的文件
+                SaveFileDialog saveFileDialog = new SaveFileDialog();
+                saveFileDialog.Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*";
+                if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    File.WriteAllText(saveFileDialog.FileName, sb.ToString(), Encoding.UTF8);
+                    MessageBox.Show("已經成功將數據轉換為 UTF-8 格式 \r\n\r\n 保存地址為 : " + saveFileDialog.FileName + " 文件");
+                }
+            }
+            else
+            {
+                MessageBox.Show("沒有可以保存的數據");
+            }
+        }
+
+        private void dataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0)
+            {
+                int rowNumber = e.RowIndex + 1;
+                int columnNumber = e.ColumnIndex + 1;
+                SelectedRowCountLabel.Text = string.Format("選中筆數 : 第 {0} 列中的第 {1} 行", rowNumber, columnNumber);
+            }
+        }
+
     }
 }
