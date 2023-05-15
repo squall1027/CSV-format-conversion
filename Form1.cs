@@ -430,5 +430,101 @@ namespace csv_format_conversion
             }
         }
 
+        // CSV文件拖動到DataGridView控件中確認文件是否為CSV文件
+        private void dataGridView1_DragEnter(object sender, DragEventArgs e)
+        {
+            // 檢查拖放的數據是否是文件。
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                // 獲取拖入的文件地址和文件名
+                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                string fileNames = string.Join(", ", files);
+                string message = $"檔案：{Path.GetFileName(fileNames)}\n\n路徑：{fileNames}";
+
+                // 在MessageBox中顯示文件名和路徑
+                DialogResult result = MessageBox.Show(message, "確認導入文件", MessageBoxButtons.YesNo);
+                if (result == DialogResult.Yes)
+                {
+                    // 如果是文件，設置拖放效果為複製。
+                    e.Effect = DragDropEffects.Copy;
+                }
+            }
+        }
+
+        private void dataGridView1_DragDrop(object sender, DragEventArgs e)
+        {
+            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            if (files.Length == 1 && Path.GetExtension(files[0]).ToLower() == ".csv")
+            {
+                string filePath = files[0];
+                try
+                {
+                    // 檢測 CSV 文件的編碼格式
+                    Encoding encoding = GetEncoding(filePath);
+
+                    // 讀取 CSV 文件
+                    using (StreamReader reader = new StreamReader(filePath, encoding))
+                    {
+                        DataTable dataTable = new DataTable();
+                        bool isFirstRow = true;
+                        while (!reader.EndOfStream)
+                        {
+                            string line = reader.ReadLine();
+                            string[] values = Regex.Split(line, ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+                            if (isFirstRow)
+                            {
+                                foreach (string value in values)
+                                {
+                                    dataTable.Columns.Add(value.Trim());
+                                }
+                                isFirstRow = false;
+                            }
+                            else
+                            {
+                                DataRow row = dataTable.NewRow();
+                                for (int i = 0; i < values.Length; i++)
+                                {
+                                    row[i] = values[i].Trim();
+                                }
+                                dataTable.Rows.Add(row);
+                            }
+                        }
+                        dataGridView1.DataSource = dataTable;
+
+                        // 獲取表格中的行數
+                        CountRows();
+
+                        // DeBUG用，如要用請新増 richTextBox1 組件
+                        // richTextBox1.Text = File.ReadAllText(filePath, encoding);
+
+                        // 設定 DataGridView 的字體
+                        //SetDataGridViewFont(encoding);
+
+                        // 瀏覽 CSV 的文件位置
+                        btnBrowseCSV.Visible = true;
+
+                        // 當前 CSV 文件路徑
+                        Filelist_label.Visible = true;
+                        Filelist_label.Text = "文件位置 : " + filePath;
+
+                        statusBar.Text = "目前文件編碼格式為 : " + encoding.EncodingName;
+
+                        // 顯示編碼格式
+                        MessageBox.Show("文件已讀取成功！\r\n\r\n當前 CSV 編碼格式為：" + encoding.EncodingName, "提示 :");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    statusBar.Text = "讀取 CSV 文件時出現異常 : " + ex.Message;
+
+                    MessageBox.Show("讀取 CSV 文件時出現異常：\r\n\r\n" + ex.Message, "提示 :");
+                }
+            }
+            else
+            {
+                MessageBox.Show("拖入的文件不是CSV文件", "提示");
+            }
+        }
+
     }
 }

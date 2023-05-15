@@ -74,6 +74,7 @@
             // 
             // dataGridView1
             // 
+            this.dataGridView1.AllowDrop = true;
             this.dataGridView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
@@ -87,6 +88,8 @@
             this.dataGridView1.TabStop = false;
             this.dataGridView1.CellClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellClick);
             this.dataGridView1.CellValueChanged += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellValueChanged);
+            this.dataGridView1.DragDrop += new System.Windows.Forms.DragEventHandler(this.dataGridView1_DragDrop);
+            this.dataGridView1.DragEnter += new System.Windows.Forms.DragEventHandler(this.dataGridView1_DragEnter);
             // 
             // statusBar
             // 
@@ -125,7 +128,7 @@
             this.Version_label.Name = "Version_label";
             this.Version_label.Size = new System.Drawing.Size(46, 12);
             this.Version_label.TabIndex = 59;
-            this.Version_label.Text = "Ver : 1.4";
+            this.Version_label.Text = "Ver : 1.5";
             // 
             // Filelist_label
             // 
